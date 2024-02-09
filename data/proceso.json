@@ -1,0 +1,38 @@
+{
+"ejecuciones":{
+    "archivo1":{
+   "varibles":[["Recobros por Asesor"],"recobros_por_asesor","WORKFORCE//02. Workforce//WFM Ronald Barberi//01_DATA_SCIENCE//03_GOPASS//03_temporary_downloads//", "Z"],
+   "sheets":["Recobros por Asesor"],
+   "opcion_path":["4",";"],
+   "opcion_cargue_tabla":1,
+   "asignacion":0,
+   "columnas":[],
+   "fechas":["FECHA"],
+   "formatos":[],
+   "columnas_sin_espacio" : []
+  },
+  "archivo2":{
+    "varibles":[["Detalle de Cartera"],"detalle_cartera","WORKFORCE//02. Workforce//WFM Ronald Barberi//01_DATA_SCIENCE//03_GOPASS//03_temporary_downloads//", "Z"],
+    "sheets":["Detalle de Cartera"],
+    "opcion_path":["4",";"],
+    "opcion_cargue_tabla":1,
+    "asignacion":0,
+    "columnas":[],
+    "fechas":[],
+    "formatos":[],
+    "columnas_sin_espacio" : []
+   },
+   "archivo3":{
+     "varibles":[["Usuarios Suspendidos"],"usuarios_supendidos","WORKFORCE//02. Workforce//WFM Ronald Barberi//01_DATA_SCIENCE//03_GOPASS//03_temporary_downloads//", "Z"],
+     "sheets":["Usuarios Suspendidos"],
+     "opcion_path":["4",";"],
+     "opcion_cargue_tabla":1,
+     "asignacion":0,
+     "columnas":[],
+     "fechas":[],
+     "formatos":[],
+     "columnas_sin_espacio" : []
+    }
+ }
+
+}
