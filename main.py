@@ -44,11 +44,11 @@ for i in range(len(list(archivos))):
     elif nombre_sistema_operativo == "Linux":
         if coleccion[key1]["varibles"][3].strip("'") =="L":
           path_0 = os.path.join(l_sever,*path_0)
-        else:
+        else: 
             path_0 = os.path.join(z_server,*path_0)
     # Selección de tipo de ruta a leer 
     if  coleccion[key1]["opcion_path"][0].strip("'") == "1":
-        path = os.path.join(path_0, anio, mes, dia)
+        path = os.path.join(path_0, anio, mes, '09')
     elif coleccion[key1]["opcion_path"][0].strip("'") == "2":
         path = os.path.join(path_0, anio, mes) 
     elif coleccion[key1]["opcion_path"][0].strip("'") == "3":

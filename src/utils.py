@@ -4,6 +4,8 @@ import sys
 import pandas as pd
 from Functions import *
 from Connections import *
+from Connections import MySqlConnections as ms
+from etl_asignacion import *
 sys.path.append(os.path.join(".."))
 from Imports import *
 
@@ -95,12 +97,15 @@ def convertir_fecha(fecha):
             
 def toSqlTxt(path,nombre_tabla,file_, dic_fechas, dic_formatos, separador, columnas_tabla):
     try:
-        if len(columnas_tabla)==0 :
+        if len(columnas_tabla)==0 and nombre_tabla != 'bdd_asignacion_claro_cobranza':
             df = dd.read_csv(path+"/"+file_[22:],sep = separador,dtype=str, index_col=False)
+        elif nombre_tabla == 'bdd_asignacion_claro_cobranza':
+            df = pd.read_csv(path+"/"+file_[22:],sep = separador,dtype=str, index_col=False, on_bad_lines='skip',encoding='utf-8', skip_blank_lines=False ,engine='python' , quoting=3,chunksize=15000_000)#
         else:
             df = dd.read_csv(path+"/"+file_[22:],sep = separador,dtype=str, index_col=False, names=columnas_tabla, encoding='latin-1')
         toSqlDf(df, path, file_, dic_fechas, dic_formatos, nombre_tabla)
     except Exception as e:
+        print(e)
         raise
 
 def toSqlExcel(path,nombre_tabla,file_, dic_fechas,dic_formatos,dic_hojas,separador, cargue_tabla, asignacion,columnas_tabla):
@@ -155,6 +160,7 @@ def toSqlDf(df, path, file_, dic_fechas, dic_formatos, nombre_tabla):
         if type(df)==pd.core.frame.DataFrame:
             df=dd.from_pandas(df, npartitions=10)
         fecha= datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(path, file_[22:])))
+        
         tabla_reemplazo = str.maketrans({"á":"a","é":"e","í":"i","ó":"o","ú":"u","ñ":"n","Á":"A","É":"E","Í":"I","Ó":"O","Ú":"U","Ñ":"N"})
         df.columns = df.columns.str.strip()
         df.columns = df.columns.str.replace(" ", "_", regex=True)
@@ -175,7 +181,7 @@ def toSqlDf(df, path, file_, dic_fechas, dic_formatos, nombre_tabla):
         with engine.connect() as connection:
             for fecha_mod in dic_fechas:
                 if fecha_mod in df.columns:
-                    df[fecha_mod]=df[fecha_mod].apply(convertir_fecha, meta=(f"{fecha_mod}", "str")) # 
+                    df[fecha_mod]=df[fecha_mod].apply(convertir_fecha) # ,meta=(f"{fecha_mod}", "str")
             df['FILE_DATE'] = fecha                                     
             df['FILE_NAME'] = file_[22:]
             df['FILE_YEAR'] = df['FILE_DATE'].dt.year
@@ -194,6 +200,32 @@ def toSqlDf(df, path, file_, dic_fechas, dic_formatos, nombre_tabla):
                     logging.getLogger("user").info(f"Columna {i} agregada.")
                     connection.execute(text(f"ALTER TABLE `{bbdd_or}`.`{tabla.name}` ADD COLUMN `" + listCols[i] + "` VARCHAR(128)"))
             tabla = Table(f"tb_{nombre_tabla}", MetaData(), autoload_with = engine)
+            path= os.path.join(os.getcwd(),'temp','temp_data.csv')
+            csv_file = str(path)
+            # Suponiendo que df es tu DataFrame de Dask
+            # Escribir el DataFrame de Dask en un archivo CSV con encabezados
+            df = pd.concat([df] + [chunk for chunk in df], ignore_index=True)
+            df.to_csv(csv_file, sep='德', header=True, index=False, encoding='utf-8',chunksize=1500_000)
+            csv_file = str(csv_file).replace('\\\\','\\')
+
+            with engine.connect() as conn:
+                columnas= df.columns
+                consulta = r"""
+                LOAD DATA LOCAL INFILE '{}'
+                INTO TABLE tb_{}
+                FIELDS TERMINATED BY '德'
+                ENCLOSED BY '\"'
+                LINES TERMINATED BY '\n'
+                IGNORE 1 LINES
+                """.format(csv_file,nombre_tabla)
+                consulta += f"""({', '.join(columnas)})
+                                ON DUPLICATE KEY UPDATE 
+                                {', '.join([f"{col} = VALUES({col})" for col in columnas])};"""
+                print(consulta)
+                conn.execute(consulta)
+            # Eliminar el archivo CSV temporal
+            if os.path.exists(csv_file):
+                os.remove(csv_file)
             valores_filas = df.values.compute().tolist()
             list_of_tuples = [tuple(None if value == "None"  else value for value in row) for row in valores_filas]
             chunks = [list_of_tuples[i:i+10000] for i in range(0, len(list_of_tuples), 10000)]
@@ -203,7 +235,9 @@ def toSqlDf(df, path, file_, dic_fechas, dic_formatos, nombre_tabla):
                 executor.map(to_sql_replace, argumentos)
             logging.getLogger("user").info('Insercion Tabla destino DW')
     except Exception as e:
+        print(e)
         raise
+        
 
 def to_sql_replace(argumentos):
     try:
@@ -231,13 +265,13 @@ def check_and_add(path,nombre_tabla,file, dic_fechas,dic_formatos,dic_hojas,sepa
     try:
         nombre, extension = os.path.splitext(file) # Obtener el nombre archivo y extención
         # validacion de extenciones para saber que función usar 
-        if extension in [".txt", ".csv"]:
+        if extension in [".txt", ".csv"] and nombre_tabla != 'bdd_asignacion_claro_cobranza':
             logging.getLogger("user").info(f"el archivo es un txt")
             toSqlTxt(path,nombre_tabla,file, dic_fechas,dic_formatos,separador, columnas_tabla)
-        elif extension in [".xlsx", ".XLSX" ]:
+        elif extension in [".xlsx", ".XLSX" ] and nombre_tabla != 'bdd_asignacion_claro_cobranza':
             logging.getLogger("user").info(f"el archivo es un excel")
             toSqlExcel(path,nombre_tabla,file, dic_fechas,dic_formatos,dic_hojas,separador, cargue_tabla, asignacion, columnas_tabla)
-        elif extension in [".zip", ".ZIP"]:
+        elif extension in [".zip", ".ZIP"] and nombre_tabla != 'bdd_asignacion_claro_cobranza':
             logging.getLogger("user").info(f"el archivo es un zip")
             toSqlZip(path,nombre_tabla,file, dic_fechas,dic_formatos,dic_hojas,separador, nombre_archivo, cargue_tabla,asignacion, logs,columnas_tabla)
         send(f"Se acaba de cargar la base {file[22:]} de Gopass")
@@ -268,13 +302,20 @@ def scan_folder(path,nombre_tabla,nombre_archivo,dic_fechas,dic_formatos,dic_hoj
     logging.getLogger("user").info(f"en Scan {nombre_tabla} -- {nombre_archivo}-- {path}")
     try:
         if os.path.exists(path): # validar si la ruta existe
-            file_to_load = Read_files_path(path,nombre_tabla,nombre_archivo, manual) # Obtener listado de los archivos a cargar 
-            for file in file_to_load: # interar los archivos para el cargue
-                logging.getLogger("user").info(f"cargando {file}")
-                # validacion y extandarización para el cargue de los archivos 
-                check_and_add(path,nombre_tabla,file, dic_fechas,dic_formatos,dic_hojas,separador, cargue_tabla, asignacion, nombre_archivo, columnas_tabla) 
+            if  nombre_tabla == 'bdd_asignacion_claro_cobranza':
+                CONNECTION = ms.varConnCol61.connect()
+                SCHEMA = 'bbdd_groupcos_repositorio_claro_cobranza_v1'
+                # TABLE = 'tb_bdd_asignacion_claro_cobranza'
+                main = LoadDataServer(path, CONNECTION, SCHEMA, f'tb_{nombre_tabla}')._dataframe_result()
+            else:
+                file_to_load = Read_files_path(path,nombre_tabla,nombre_archivo, manual) # Obtener listado de los archivos a cargar 
+                for file in file_to_load: # interar los archivos para el cargue
+                    logging.getLogger("user").info(f"cargando {file}")
+                    # validacion y extandarización para el cargue de los archivos 
+                    check_and_add(path,nombre_tabla,file, dic_fechas,dic_formatos,dic_hojas,separador, cargue_tabla, asignacion, nombre_archivo, columnas_tabla) 
         else:
             send(f"No ha habido cargue de la base {nombre_tabla} del {anio}-{mes}-{dia}") 
             logging.getLogger("user").info(f"no existe la ruta")
     except Exception as e:
+        print(e)
         logging.getLogger("user").exception(e)
