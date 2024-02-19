@@ -5043,3 +5043,22 @@ TypeError: 'module' object is not callable
 [2024-02-15 15:34:14 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- Z:\REPORTING\24_Procesos_GroupCOS\118.Claro_Cobranza\claro_cobranza_colombia_b2c\bases_asignadas\2.asignacion_diaria\
 [2024-02-15 15:40:17 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- Z:\REPORTING\24_Procesos_GroupCOS\118.Claro_Cobranza\claro_cobranza_colombia_b2c\bases_asignadas\2.asignacion_diaria\
 [2024-02-15 15:40:59 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- Z:\REPORTING\24_Procesos_GroupCOS\118.Claro_Cobranza\claro_cobranza_colombia_b2c\bases_asignadas\2.asignacion_diaria\
+[2024-02-16 18:20:15 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- //root//PROCESOS//ASIGNACIONES//CompartidasCOS//REPORTING/24_Procesos_GroupCOS/118.Claro_Cobranza/claro_cobranza_colombia_b2c/bases_asignadas/2.asignacion_diaria/
+[2024-02-16 18:20:16 >> INFO    ] no existe la ruta
+[2024-02-16 22:08:34 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- //shared//REPORTING/24_Procesos_GroupCOS/118.Claro_Cobranza/claro_cobranza_colombia_b2c/bases_asignadas/2.asignacion_diaria/
+[2024-02-16 22:08:34 >> ERROR   ] 'NoneType' object is not subscriptable
+Traceback (most recent call last):
+  File "/app/src/utils.py", line 309, in scan_folder
+    main = LoadDataServer(path, CONNECTION, SCHEMA, f'tb_{nombre_tabla}')._dataframe_result()
+  File "/app/src/etl_asignacion.py", line 258, in _dataframe_result
+    df['FECHA_DE_ASIGNACION'] = df['FECHA_DE_ASIGNACION'].apply(pd.to_datetime , format='%d/%m/%Y %I:%M %p', errors='ignore')
+TypeError: 'NoneType' object is not subscriptable
+[2024-02-16 22:10:07 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- //shared//REPORTING/24_Procesos_GroupCOS/118.Claro_Cobranza/claro_cobranza_colombia_b2c/bases_asignadas/2.asignacion_diaria/
+[2024-02-16 22:10:07 >> ERROR   ] 'NoneType' object is not subscriptable
+Traceback (most recent call last):
+  File "/app/src/utils.py", line 309, in scan_folder
+    main = LoadDataServer(path, CONNECTION, SCHEMA, f'tb_{nombre_tabla}')._dataframe_result()
+  File "/app/src/etl_asignacion.py", line 258, in _dataframe_result
+    df['FECHA_DE_ASIGNACION'] = df['FECHA_DE_ASIGNACION'].apply(pd.to_datetime , format='%d/%m/%Y %I:%M %p', errors='ignore')
+TypeError: 'NoneType' object is not subscriptable
+[2024-02-16 22:10:53 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- //shared//REPORTING/24_Procesos_GroupCOS/118.Claro_Cobranza/claro_cobranza_colombia_b2c/bases_asignadas/2.asignacion_diaria/

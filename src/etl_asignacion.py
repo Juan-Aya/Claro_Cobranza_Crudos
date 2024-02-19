@@ -139,7 +139,7 @@ class LoadDataServer:
         self.table = table
 
     def _get_today_path(self):
-        today = (dt.today() - timedelta(days=1)).strftime('%Y\\%m\\%d')
+        today = (dt.today() - timedelta(days=2)).strftime('%Y//%m//%d')
         return os.path.join(self.path, today)
 
     def _scan_folder_documents(self):
