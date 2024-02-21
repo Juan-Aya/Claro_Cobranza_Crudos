@@ -5062,3 +5062,5 @@ Traceback (most recent call last):
     df['FECHA_DE_ASIGNACION'] = df['FECHA_DE_ASIGNACION'].apply(pd.to_datetime , format='%d/%m/%Y %I:%M %p', errors='ignore')
 TypeError: 'NoneType' object is not subscriptable
 [2024-02-16 22:10:53 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- //shared//REPORTING/24_Procesos_GroupCOS/118.Claro_Cobranza/claro_cobranza_colombia_b2c/bases_asignadas/2.asignacion_diaria/
+[2024-02-20 22:29:43 >> INFO    ] en Scan bdd_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- //shared//REPORTING/24_Procesos_GroupCOS/118.Claro_Cobranza/claro_cobranza_colombia_b2c/bases_asignadas/2.asignacion_diaria/
+[2024-02-20 22:30:18 >> INFO    ] en Scan bdd_cambio_asignacion_claro_cobranza -- ['CAM - UNIF REPORTE MULTICAMPA']-- //shared//REPORTING/24_Procesos_GroupCOS/118.Claro_Cobranza/claro_cobranza_colombia_b2c/bases_asignadas/2.asignacion_diaria/

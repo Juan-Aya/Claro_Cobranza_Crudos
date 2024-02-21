@@ -1,9 +1,12 @@
 from Imports import *
 from Connections import LoadDataframePandas as ld
 
+variables_logs = {'fecha': None, 'base': None}
+sys.variables_logs = variables_logs
+
 
 class ScriptEmail:
-    
+
     def __init__(self):
         pass
     
@@ -137,14 +140,15 @@ class LoadDataServer:
         self.connection = connection
         self.schema = schema
         self.table = table
+        self.fecha = None
+        self.base = None
 
     def _get_today_path(self):
-        today = (dt.today() - timedelta(days=2)).strftime('%Y//%m//%d')
+        today = (dt.today() - timedelta(days=1)).strftime('%Y//%m//%d')
         return os.path.join(self.path, today)
 
     def _scan_folder_documents(self):
         path = self._get_today_path()
-
         if not os.path.exists(path):
             print(f'Path {path} does not exist.')
             return None
@@ -177,21 +181,26 @@ class LoadDataServer:
         df = self._read_excel(path)
         if df is None:
             return
-        
-
+        self.fecha = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+        self.base = str(path).split('\\')[len(str(path).split('\\'))-1]
+        variables_logs['fecha'] = self.fecha
+        variables_logs['base'] = self.base
         df_server = set(pd.read_sql_query(query, self.connection)['CUENTA'])
-
         df_list = [chunk[~chunk['[Account.AccountCode?]'].isin(df_server)] for chunk in df]
-        print(df_list)
         df = pd.concat(df_list)
         df.rename(columns=self.RENAME_COLS, inplace=True)
         df['CLIENTE'] = df['CLIENTE'].apply(lambda x : re.sub('[^0-9]','',x))
-        df['NOMBRE_BASE'] = str(path).split('\\')[len(str(path).split('\\'))-1]
+        df['NOMBRE_BASE'] = self.base
         df['ANHO_MES'] = dt.today().strftime('%Y_%m')
         df['FECHA_ASIGNACION'] = dt.today().strftime('%Y-%m-%d')
         df['EMAIL_MOD1'] = df['EMAIL'].apply(ScriptEmail._clean_email)
+        df['FILE_DATE'] = self.fecha
+        df['FILE_NAME'] = self.base
+        df['FILE_YEAR'] = df['FILE_DATE'].dt.year
+        df['FILE_MONTH']  = df['FILE_DATE'].dt.month
         
-        return df
+        return df,{'fecha':self.fecha,
+                   'base':self.base} 
     
     def _dataframe_result(self):
         
@@ -253,17 +262,17 @@ class LoadDataServer:
             country = str(country).split('/')[0]
             return country.strip()
         
-        df = self._filter_new_accounts()
+        df,resultado = self._filter_new_accounts()
         # df['CIUDADES'] = df['CIUDAD'].apply(_split_country)
         df['FECHA_DE_ASIGNACION'] = df['FECHA_DE_ASIGNACION'].apply(pd.to_datetime , format='%d/%m/%Y %I:%M %p', errors='ignore')
         df['FECHA_FINAL'] = df['FECHA_FINAL'].apply(pd.to_datetime , format='%d/%m/%Y %I:%M %p', errors='ignore')
         df['FECHA_DE_VENCIMIENTO'] = df['FECHA_DE_VENCIMIENTO'].apply(pd.to_datetime , format='%d/%m/%Y' , errors='ignore')
         df['FECHA_DE_ACELERACION'] = df['FECHA_DE_ACELERACION'].apply(pd.to_datetime , format='%d/%m/%Y' , errors='ignore')
         df['NOMBRE_FRANJA'] = df.apply(lambda x : _franjas(x['CRM_ORIGEN'] , x['POTENCIAL_MARK'] , x['PRE_PORTENCIAL_MARK'] , x['WRITE_OFF_MARK'] , x['DEBT_AGE_INICIAL'] , x['REFINANCIED_MARK'] , x['NOMBRE_CAMPANA']) , axis=1)
-        
+
+
         query_server = f'select * from {self.schema}.{self.table} limit 1'
         df_server = pd.read_sql_query(query_server, self.connection)
         ld.funMainLoadDataServerNotTruncate(self.connection, self.table, self.schema, df, df_server)
-        
-        return print(df)
 
+        return print(df),resultado

@@ -5,7 +5,9 @@ import pandas as pd
 from Functions import *
 from Connections import *
 from Connections import MySqlConnections as ms
-from etl_asignacion import *
+from etl_asignacion_historico import *
+from etl_asignacion_historico import LoadDataServer
+from _etl_asignacion_cambios_server import *
 sys.path.append(os.path.join(".."))
 from Imports import *
 
@@ -200,32 +202,6 @@ def toSqlDf(df, path, file_, dic_fechas, dic_formatos, nombre_tabla):
                     logging.getLogger("user").info(f"Columna {i} agregada.")
                     connection.execute(text(f"ALTER TABLE `{bbdd_or}`.`{tabla.name}` ADD COLUMN `" + listCols[i] + "` VARCHAR(128)"))
             tabla = Table(f"tb_{nombre_tabla}", MetaData(), autoload_with = engine)
-            path= os.path.join(os.getcwd(),'temp','temp_data.csv')
-            csv_file = str(path)
-            # Suponiendo que df es tu DataFrame de Dask
-            # Escribir el DataFrame de Dask en un archivo CSV con encabezados
-            df = pd.concat([df] + [chunk for chunk in df], ignore_index=True)
-            df.to_csv(csv_file, sep='德', header=True, index=False, encoding='utf-8',chunksize=1500_000)
-            csv_file = str(csv_file).replace('\\\\','\\')
-
-            with engine.connect() as conn:
-                columnas= df.columns
-                consulta = r"""
-                LOAD DATA LOCAL INFILE '{}'
-                INTO TABLE tb_{}
-                FIELDS TERMINATED BY '德'
-                ENCLOSED BY '\"'
-                LINES TERMINATED BY '\n'
-                IGNORE 1 LINES
-                """.format(csv_file,nombre_tabla)
-                consulta += f"""({', '.join(columnas)})
-                                ON DUPLICATE KEY UPDATE 
-                                {', '.join([f"{col} = VALUES({col})" for col in columnas])};"""
-                print(consulta)
-                conn.execute(consulta)
-            # Eliminar el archivo CSV temporal
-            if os.path.exists(csv_file):
-                os.remove(csv_file)
             valores_filas = df.values.compute().tolist()
             list_of_tuples = [tuple(None if value == "None"  else value for value in row) for row in valores_filas]
             chunks = [list_of_tuples[i:i+10000] for i in range(0, len(list_of_tuples), 10000)]
@@ -303,10 +279,57 @@ def scan_folder(path,nombre_tabla,nombre_archivo,dic_fechas,dic_formatos,dic_hoj
     try:
         if os.path.exists(path): # validar si la ruta existe
             if  nombre_tabla == 'bdd_asignacion_claro_cobranza':
+                try:
+                    ini =  time.time()
+                    CONNECTION = ms.varConnCol61.connect()
+                    SCHEMA = 'bbdd_groupcos_repositorio_claro_cobranza_v1'
+                    main = LoadDataServer(path, CONNECTION, SCHEMA, f'tb_{nombre_tabla}')._dataframe_result()
+                except Exception as e:
+                    estado='ERROR'
+                    print(sys.variables_logs) 
+                    error=f"{e}"
+                    razon= error.replace("[^0-9a-zA-Z_]", "")
+                    send(f"Error cargado la base @Aya_Juan {sys.variables_logs['base']} \n {e}")
+                else:
+                    estado='SUCCESS'
+                    razon=''
+                    send(f"Se acaba de cargar la base \n {sys.variables_logs['base']}")
+                finally:
+                    fecha_log = sys.variables_logs['fecha'] #nombre_base
+                    nombre_base = sys.variables_logs['base']
+                    fin = time.time()
+                    tEjecucion = fin-ini
+                    cdn_connection,engine,bbdd_or = mysql_connection()
+                    if nombre_base != None:
+                        with engine.connect() as conn:
+                            conn.execute(text(f"""INSERT INTO {bbdd_or}.tb_loaded_files (FILE_DATE, FILE_NAME,TABLA, ESTADO,TIEMPO_EJECUCION, RAZON) VALUES  ('{fecha_log}', '{nombre_base}', 'tb_{nombre_tabla}','{estado}', '{tEjecucion}','{razon}') ON DUPLICATE KEY UPDATE  ESTADO = VALUES(ESTADO),TIEMPO_EJECUCION=VALUES(TIEMPO_EJECUCION);"""))        
+                    
+            elif nombre_tabla == 'bdd_cambio_asignacion_claro_cobranza':
                 CONNECTION = ms.varConnCol61.connect()
                 SCHEMA = 'bbdd_groupcos_repositorio_claro_cobranza_v1'
-                # TABLE = 'tb_bdd_asignacion_claro_cobranza'
-                main = LoadDataServer(path, CONNECTION, SCHEMA, f'tb_{nombre_tabla}')._dataframe_result()
+                try:
+                    ini =  time.time()
+                    main = LoadDataServer_cambios(path, CONNECTION, SCHEMA, f'tb_{nombre_tabla}')._dataframe_result()
+                    
+                except Exception as e:
+                    estado='ERROR'
+                    error=f"{e}"
+                    razon= error.replace("[^0-9a-zA-Z_]", "")
+                    send(f"Error cargado la base @Aya_Juan {sys.variables_logs['base']} \n {e}")     
+                else:
+                    estado='SUCCESS'
+                    razon=''
+                    send(f"Se acaba de cargar la base \n {sys.variables_logs['base']}")     
+                finally:
+                    fecha_log = sys.variables_logs['fecha'] #nombre_base
+                    nombre_base = sys.variables_logs['base']
+                    fin = time.time()
+                    tEjecucion = fin-ini
+                    cdn_connection,engine,bbdd_or = mysql_connection()
+                    if nombre_base != None:
+                        with engine.connect() as conn:
+                            conn.execute(text(f"""INSERT INTO {bbdd_or}.tb_loaded_files (FILE_DATE, FILE_NAME,TABLA, ESTADO,TIEMPO_EJECUCION, RAZON) VALUES  ('{fecha_log}', '{nombre_base}', 'tb_{nombre_tabla}','{estado}', '{tEjecucion}','{razon}') ON DUPLICATE KEY UPDATE  ESTADO = VALUES(ESTADO),TIEMPO_EJECUCION=VALUES(TIEMPO_EJECUCION);"""))   
+                    
             else:
                 file_to_load = Read_files_path(path,nombre_tabla,nombre_archivo, manual) # Obtener listado de los archivos a cargar 
                 for file in file_to_load: # interar los archivos para el cargue

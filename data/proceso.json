@@ -1,16 +1,27 @@
 {
-"ejecuciones":{
-    "archivo1":{
-   "varibles":[["CAM - UNIF REPORTE MULTICAMPA"],"bdd_asignacion_claro_cobranza","REPORTING//24_Procesos_GroupCOS//118.Claro_Cobranza//claro_cobranza_colombia_b2c//bases_asignadas//2.asignacion_diaria//", "Z"],
-   "sheets":[],
-   "opcion_path":["4",";"],
-   "opcion_cargue_tabla":1,
-   "asignacion":0,
-   "columnas":[],
-   "fechas":[],
-   "formatos":[],
-   "columnas_sin_espacio" : []
-  }
- }
+    "ejecuciones":{
+        "archivo1":{
+            "varibles":[["CAM - UNIF REPORTE MULTICAMPA"],"bdd_asignacion_claro_cobranza","REPORTING//24_Procesos_GroupCOS//118.Claro_Cobranza//claro_cobranza_colombia_b2c//bases_asignadas//2.asignacion_diaria//", "Z"],
+            "sheets":[],
+            "opcion_path":["4",";"],
+            "opcion_cargue_tabla":1,
+            "asignacion":0,
+            "columnas":[],
+            "fechas":[],
+            "formatos":[],
+            "columnas_sin_espacio" : []
+        },
+        "archivo2":{
+            "varibles":[["CAM - UNIF REPORTE MULTICAMPA"],"bdd_cambio_asignacion_claro_cobranza","REPORTING//24_Procesos_GroupCOS//118.Claro_Cobranza//claro_cobranza_colombia_b2c//bases_asignadas//2.asignacion_diaria//", "Z"],
+            "sheets":[],
+            "opcion_path":["4",";"],
+            "opcion_cargue_tabla":1,
+            "asignacion":0,
+            "columnas":[],
+            "fechas":[],
+            "formatos":[],
+            "columnas_sin_espacio" : []
+        }
+    }
 
 }
